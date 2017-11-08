@@ -25,30 +25,47 @@ namespace WeatherApi.Controllers
         public IActionResult GetAll([FromQuery] string lat, [FromQuery] string lon)
         {
             var regx = new Regex(@"^[+-]?[0-9]{1,9}(?:\.[0-9]{1,9})?$");
-            var errorMessage = new Dictionary<string, string>()
-            {
-                {
-                    "error",
-                    $"Pleas check your querystring make sure they are (correct) numbers: lat => {lat} lon => {lon}"
-                }
-            };
+            var message = new Dictionary<string, string>();
 
-            lon = lon.Trim();
-            lat = lat.Trim();
-
-            if (regx.IsMatch(lat) && regx.IsMatch(lon))
+            if (!Request.QueryString.HasValue)
             {
-                return new ObjectResult(JsonConvert.DeserializeObject(GetTemperatureByLocation(lat, lon).Result));
+                message.Add("message", $"now try http://{Request.Host}/api/weather?lat=47.641944&lon=-122.127222");
+                return Ok(message);
             }
-            
-                return new NotFoundObjectResult(errorMessage);
-            
+
+            else if (Request.QueryString.Value.Contains("lat") && Request.QueryString.Value.Contains("lon"))
+            {
+                if (lat == null || lon == null)
+                {
+                    message.Add("error", $"Pleas check your querystring make sure they are(correct) numbers: lat => {lat} lon => {lon}");
+                    return new NotFoundObjectResult(message);
+                }
+                else if (regx.IsMatch(lat) && regx.IsMatch(lon))
+                {
+                    return new ObjectResult(JsonConvert.DeserializeObject(GetTemperatureByLocation(lat, lon).Result));
+                }
+
+                else
+                {
+                    message.Add("error", $"Pleas check your querystring make sure they are(correct) numbers: lat => {lat} lon => {lon}");
+                    return new NotFoundObjectResult(message);
+                }
+
+            }
+            else
+            {
+                message.Add("error", "Pleas check your querystring");
+                return new NotFoundObjectResult(message);
+            }
+
+
+
         }
 
 
         private async Task<string> GetTemperatureByLocation(string lat, string lon)
         {
-            string[] urls = {OpenWeatherMapUrl, DarkSky};
+            string[] urls = { OpenWeatherMapUrl, DarkSky };
             var sb = new StringBuilder();
             dynamic darkCloud = null;
             dynamic openMap = null;
