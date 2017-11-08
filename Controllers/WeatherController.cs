@@ -24,40 +24,41 @@ namespace WeatherApi.Controllers
         [HttpGet]
         public IActionResult GetAll([FromQuery] string lat, [FromQuery] string lon)
         {
-            /*
-             * 1. Get location by lat and long from both acc and map
-             * 2. Parse the two to extract the temperatures
-             * 3. Find the average of the two temps
-             * 4. Return the data to the user in json acc mam and avg 
-             */
-
-
             var regx = new Regex(@"^[+-]?[0-9]{1,9}(?:\.[0-9]{1,9})?$");
+            var errorMessage = new Dictionary<string, string>()
+            {
+                {
+                    "error",
+                    $"Pleas check your querystring make sure they are (correct) numbers: lat => {lat} lon => {lon}"
+                }
+            };
+
+            lon = lon.Trim();
+            lat = lat.Trim();
 
             if (regx.IsMatch(lat) && regx.IsMatch(lon))
             {
                 return new ObjectResult(JsonConvert.DeserializeObject(GetTemperatureByLocation(lat, lon).Result));
             }
-
-
-            return new NotFoundObjectResult(new Dictionary<string, string>()
+            else if (lat.Equals("") || lon.Equals(""))
             {
-                {
-                    "message",
-                    $"Pleas check your querystring make sure they are (correct) numbers "
-                }
-            });
+                return new NotFoundObjectResult(errorMessage);
+            }
+            else
+            {
+                return new NotFoundObjectResult(errorMessage);
+            }
         }
 
 
         private async Task<string> GetTemperatureByLocation(string lat, string lon)
         {
             string[] urls = {OpenWeatherMapUrl, DarkSky};
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             dynamic darkCloud = null;
             dynamic openMap = null;
             var average = 0.0;
-            
+
 
             foreach (var url in urls)
             {
@@ -81,10 +82,10 @@ namespace WeatherApi.Controllers
 
             sb.Append("{").Append($"temperatureOne: {darkCloud.currently.temperature},")
                 .Append($"temperatureTwo: {openMap.main.temp},")
-                .Append($"average: {average}, ").Append($"timezone:\"{darkCloud.timezone}\",").Append($"name:\"{openMap.name}\"").Append("}");
+                .Append($"average: {average}, ").Append($"timezone:\"{darkCloud.timezone}\",")
+                .Append($"name:\"{openMap.name}\"").Append("}");
 
             return sb.ToString();
-
         }
 
 
