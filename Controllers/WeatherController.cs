@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Net;
-using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Azure.KeyVault.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -13,14 +12,17 @@ namespace WeatherApi.Controllers
 {
     [Route("api/[controller]")]
     public class WeatherController : ControllerBase
-    
+
     {
         private readonly WebClient _webClient = new WebClient();
-        private const string OpenWeatherMapUrl = "https://api.openweathermap.org/data/2.5/weather?APPID=2dbf2d5f4c4ca8b8ec9d0ac3e13faed2&units=imperial&";
+
+        private const string OpenWeatherMapUrl =
+            "https://api.openweathermap.org/data/2.5/weather?APPID=2dbf2d5f4c4ca8b8ec9d0ac3e13faed2&units=imperial&";
+
         private const string DarkSky = "https://api.darksky.net/forecast/b9a41cd9c98e4230e85bd9e96629757c/";
 
         [HttpGet]
-        public IActionResult GetAll([FromQuery] QueryString  queryString )
+        public IActionResult GetAll([FromQuery] string lat, [FromQuery] string lon)
         {
             /*
              * 1. Get location by lat and long from both acc and map
@@ -28,69 +30,75 @@ namespace WeatherApi.Controllers
              * 3. Find the average of the two temps
              * 4. Return the data to the user in json acc mam and avg 
              */
-            
-            dynamic res = JsonConvert.DeserializeObject(GetTemperatureByLocation( queryString.lat , queryString.lon ).Result);
-            return new ObjectResult(res);
-            
+
+
+            var regx = new Regex(@"^[+-]?[0-9]{1,9}(?:\.[0-9]{1,9})?$");
+
+            if (regx.IsMatch(lat) && regx.IsMatch(lon))
+            {
+                return new ObjectResult(JsonConvert.DeserializeObject(GetTemperatureByLocation(lat, lon).Result));
+            }
+
+
+            return new NotFoundObjectResult(new Dictionary<string, string>()
+            {
+                {
+                    "message",
+                    $"Pleas check your querystring make sure they are (correct) numbers "
+                }
+            });
         }
 
-        
-        private async Task<string> GetTemperatureByLocation(double lat, double lon)
+
+        private async Task<string> GetTemperatureByLocation(string lat, string lon)
         {
             string[] urls = {OpenWeatherMapUrl, DarkSky};
-            dynamic darkCloud = "";
-            dynamic openMap = "";
+            StringBuilder sb = new StringBuilder();
+            dynamic darkCloud = null;
+            dynamic openMap = null;
+            var average = 0.0;
+            
 
             foreach (var url in urls)
             {
-
                 if (url.Equals(""))
                 {
-                     return null;
+                    return null;
                 }
                 else if (url.Contains("openweathermap"))
                 {
                     openMap = await _webClient.DownloadStringTaskAsync($"{OpenWeatherMapUrl}lat={lat}&lon={lon}");
+                    openMap = JObject.Parse(openMap);
                 }
                 else
                 {
-                    darkCloud =  await _webClient.DownloadStringTaskAsync($"{DarkSky}{lat},{lon}");
+                    darkCloud = await _webClient.DownloadStringTaskAsync($"{DarkSky}{lat},{lon}");
+                    darkCloud = JObject.Parse(darkCloud);
                 }
-
             }
 
-            darkCloud = JObject.Parse(darkCloud);
-            openMap = JObject.Parse(openMap);
-            
-            var average = CompareTempsAndFindAvg(darkCloud, openMap);
+            average = CompareTempsAndFindAvg(darkCloud, openMap);
 
-            return "{ temperatureOne:" + darkCloud.currently.temperature + ", temperatureTwo:" + openMap.main.temp + ", average:"+ average  + " }";
+            sb.Append("{").Append($"temperatureOne: {darkCloud.currently.temperature},")
+                .Append($"temperatureTwo: {openMap.main.temp},")
+                .Append($"average: {average}, ").Append($"timezone:\"{darkCloud.timezone}\",").Append($"name:\"{openMap.name}\"").Append("}");
+
+            return sb.ToString();
 
         }
-
 
 
         private static double CompareTempsAndFindAvg(dynamic darkCloud, dynamic openMap)
         {
-            
             double x = darkCloud.currently.temperature;
             double y = openMap.main.temp;
-            
-            if (Math.Abs(x) > 0 && Math.Abs(y) > 0)
+
+            if (x != 0 && y != 0)
             {
-                return Math.Abs((y + x) / 2);
+                return (y + x) / 2.0;
             }
 
             return 0;
         }
-
-
-    }
-
-    public class QueryString
-    {
-        [BindRequired]
-        public double lat { get; set; }
-        public double lon { get; set; }
     }
 }
