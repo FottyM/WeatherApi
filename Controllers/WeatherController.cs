@@ -54,7 +54,7 @@ namespace WeatherApi.Controllers
             }
             else
             {
-                message.Add("error", "Pleas check your querystring");
+                message.Add("error", "Pleas check your querystring make sure you have lon and lat");
                 return new NotFoundObjectResult(message);
             }
 
@@ -90,7 +90,9 @@ namespace WeatherApi.Controllers
                 }
             }
 
-            average = CompareTempsAndFindAvg(darkCloud, openMap);
+            var div = (double) urls.Length; 
+
+            average = CompareTempsAndFindAvg(darkCloud, openMap, div);
 
             sb.Append("{").Append($"temperatureOne: {darkCloud.currently.temperature},")
                 .Append($"temperatureTwo: {openMap.main.temp},")
@@ -101,17 +103,18 @@ namespace WeatherApi.Controllers
         }
 
 
-        private static double CompareTempsAndFindAvg(dynamic darkCloud, dynamic openMap)
+        private double CompareTempsAndFindAvg(dynamic darkCloud, dynamic openMap, double div )
         {
-            double x = darkCloud.currently.temperature;
-            double y = openMap.main.temp;
+            double tempOne = darkCloud.currently.temperature;
+            double tempTwo = openMap.main.temp;
 
-            if (x != 0 && y != 0)
+            if (tempOne != 0 && tempTwo != 0)
             {
-                return (y + x) / 2.0;
+                return (tempTwo + tempOne) / div;
             }
 
-            return 0;
+            return 0.0;
         }
     }
+
 }
