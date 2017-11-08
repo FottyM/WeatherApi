@@ -40,14 +40,9 @@ namespace WeatherApi.Controllers
             {
                 return new ObjectResult(JsonConvert.DeserializeObject(GetTemperatureByLocation(lat, lon).Result));
             }
-            else if (lat.Equals("") || lon.Equals(""))
-            {
+            
                 return new NotFoundObjectResult(errorMessage);
-            }
-            else
-            {
-                return new NotFoundObjectResult(errorMessage);
-            }
+            
         }
 
 
