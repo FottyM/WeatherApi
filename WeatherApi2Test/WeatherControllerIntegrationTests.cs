@@ -27,6 +27,25 @@ namespace WeatherApi2Test
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
+        
+        [Fact]
+        public async Task Succeful_Call()
+        {
+            var response = await _client.GetAsync("/api/weather?lat=42.023949&lon=-93.647595");
+            var resposnseString = await response.Content.ReadAsStringAsync();
+            var weath = JObject.Parse(resposnseString);
+            var t1 = (double) weath["temperatureOne"];
+            var t2 = (double) weath["temperatureTwo"];
+            var avg =  weath["average"];
+            
+            Assert.Equal((t1 + t2)/ 2.0, avg );
+            weath.Count.Should().Be(5);
+            weath.Should().ContainKey("name")
+                .And.ContainKey("average")
+                .And.ContainKey("temperatureTwo")
+                .And.ContainKey("temperatureOne");
+        }
+
 
         [Fact]
         public async Task Get_Friendly_Message_With_No_LonLat()
@@ -93,40 +112,37 @@ namespace WeatherApi2Test
                 .Be("Pleas check your querystring make sure you have lon and lat");
         }
         
-        [Fact]
-        public async Task Succeful_Call()
-        {
-            var response = await _client.GetAsync("/api/weather?lat=42.023949&lon=-93.647595");
-            var resposnseString = await response.Content.ReadAsStringAsync();
-            var weath = JObject.Parse(resposnseString);
-            var t1 = (double) weath["temperatureOne"];
-            var t2 = (double) weath["temperatureTwo"];
-            var avg =  weath["average"];
-            
-            Assert.Equal((t1 + t2)/ 2.0, avg );
-            weath.Count.Should().Be(5);
-            weath.Should().ContainKey("name")
-                .And.ContainKey("average")
-                .And.ContainKey("temperatureTwo")
-                .And.ContainKey("temperatureOne");
-        }
-
+        
         [Fact]
         public async Task QuerryString_With_String_Instead_of_Number()
         {
-            var response = await _client.GetAsync("/api/weather?lon=343&lat=mutunda");
+            var response = await _client.GetAsync("/api/weather?lon=343&lat=bats");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
             weath.Should().ContainKey("error");
             weath["error"].ToString().Should()
                 .Contain("Pleas check your querystring make sure they are(correct) numbers: lat =>");
         }
-
-
-
-
-
-
-
+        
+        [Fact]
+        public async Task QuerryString_With_Bad_Number_Format()
+        {
+            var response = await _client.GetAsync("/api/weather?lon=343&lat=-32.-40");
+            var resposnseString = await response.Content.ReadAsStringAsync();
+            var weath = JObject.Parse(resposnseString);
+            weath.Should().ContainKey("error");
+            weath["error"].ToString().Should()
+                .Contain("Pleas check your querystring make sure they are(correct) numbers: lat =>");
+        }
+        
+        [Fact]
+        public  async Task Get_Tartu_Weather_Details()
+        {
+           var response = await _client.GetAsync("/api/weather?lon=26.7250900&lat=58.3806200");
+           var resposnseString = await response.Content.ReadAsStringAsync();
+           var weath = JObject.Parse(resposnseString);
+           weath["name"].ToString().Should().Contain("Tartu");
+        }
+        
     }
 }
