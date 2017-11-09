@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace WeatherApi.Controllers
+namespace WeatherApi2.Controllers
 {
     [Route("api/[controller]")]
     public class WeatherController : ControllerBase
