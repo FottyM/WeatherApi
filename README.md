@@ -45,7 +45,7 @@ Application started. Press Ctrl+C to shut down.
 ```
 7. Visit `http://localhost:5000/api/weather` and you will get this `{ "message": "now try http://localhost:5000/api/weather?lat=47.641944&lon=-122.127222"}`
 8. To get the weather forecast of a particular place on earth in Kelvin please specify it in the url like so `http://localhost:5000/api/weather?lat={value}&lon={value}`
-Exampe: `http://localhost:5000/api/weather?lon=26.7321547&lat=58.38288670` will return :
+Example: `http://localhost:5000/api/weather?lon=26.7321547&lat=58.38288670` will return :
 ```
 {
     "temperatureOne": 40.5,
