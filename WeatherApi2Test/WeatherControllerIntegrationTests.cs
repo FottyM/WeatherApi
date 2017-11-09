@@ -36,6 +36,7 @@ namespace WeatherApi2Test
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
             weath.Should().ContainKey("message");
+            weath["message"].ToString().Should().Contain("now try");
 
         }
 
@@ -45,7 +46,8 @@ namespace WeatherApi2Test
             var response = await _client.GetAsync("/api/weather?lon=26.73321547");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
-            weath.Should().ContainKey("error");   
+            weath.Should().ContainKey("error");
+            weath["error"].ToString().Should().Be("Pleas check your querystring make sure you have lon and lat");
         }
         
         [Fact]
@@ -54,35 +56,41 @@ namespace WeatherApi2Test
             var response = await _client.GetAsync("/api/weather?lat=26.73321547");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
-            weath.Should().ContainKey("error");   
+            weath.Should().ContainKey("error");
+            weath["error"].ToString().Should().Be("Pleas check your querystring make sure you have lon and lat");
         }
         
         
         [Fact]
-        public async Task Return_Other_message_with_nul_Lon_And_Lat()
+        public async Task Return_Other_message_with_null_Lon_And_Lat()
         {
             var response = await _client.GetAsync("/api/weather?lat=&lon");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
-            weath.Should().ContainKey("error");   
+            weath.Should().ContainKey("error");
+            weath["error"].ToString().Should().Be("Pleas check your querystring make sure they are(correct) numbers: lat =>  lon => ");
         }
         
         [Fact]
-        public async Task Test2()
+        public async Task Containes_Error_message_with_lon_lon()
         {
             var response = await _client.GetAsync("/api/weather?lon=&lon");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
-            weath.Should().ContainKey("error");   
+            weath.Should().ContainKey("error");
+            weath["error"].ToString().Should().Be("Pleas check your querystring make sure you have lon and lat");
+
         }
         
         [Fact]
-        public async Task Test3()
+        public async Task Containes_Error_message_with_lat_lat()
         {
             var response = await _client.GetAsync("/api/weather?lat=&lat");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
             weath.Should().ContainKey("error");
+            weath["error"].ToString().Should()
+                .Be("Pleas check your querystring make sure you have lon and lat");
         }
         
         [Fact]
@@ -91,14 +99,33 @@ namespace WeatherApi2Test
             var response = await _client.GetAsync("/api/weather?lat=42.023949&lon=-93.647595");
             var resposnseString = await response.Content.ReadAsStringAsync();
             var weath = JObject.Parse(resposnseString);
-            weath.Should().ContainKey("name").And.ContainKey("average").And.ContainKey("temperatureTwo").And.ContainKey("temperatureOne");
+            var t1 = (double) weath["temperatureOne"];
+            var t2 = (double) weath["temperatureTwo"];
+            var avg =  weath["average"];
+            
+            Assert.Equal((t1 + t2)/ 2.0, avg );
+            weath.Count.Should().Be(5);
+            weath.Should().ContainKey("name")
+                .And.ContainKey("average")
+                .And.ContainKey("temperatureTwo")
+                .And.ContainKey("temperatureOne");
         }
-        
-        
-        
-        
-        
-        
+
+        [Fact]
+        public async Task QuerryString_With_String_Instead_of_Number()
+        {
+            var response = await _client.GetAsync("/api/weather?lon=343&lat=mutunda");
+            var resposnseString = await response.Content.ReadAsStringAsync();
+            var weath = JObject.Parse(resposnseString);
+            weath.Should().ContainKey("error");
+            weath["error"].ToString().Should()
+                .Contain("Pleas check your querystring make sure they are(correct) numbers: lat =>");
+        }
+
+
+
+
+
 
 
     }

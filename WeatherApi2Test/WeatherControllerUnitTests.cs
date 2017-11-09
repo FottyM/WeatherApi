@@ -23,7 +23,8 @@ namespace WeatherApi2Test
         
 
         [Fact]
-        public void True_FACT(){
+        public void True_FACT()
+        {
             Assert.Equal(2,2);
         }
         
